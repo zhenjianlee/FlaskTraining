@@ -18,12 +18,15 @@ class Item(MethodView):
         item= ItemModel.query.get_or_404(item_id)
         return item
 
+    @blp.response(200)
     def delete(self, item_id):
         try:
-            ItemModel.query.filter_by(id=item_id).first().delete()
-            db.session().commit()
+            item=ItemModel.query.filter_by(id=item_id).first()
+            db.session.delete(item)
+            db.session.commit()
         except SQLAlchemyError:
             return abort(500, message="Could not delete item!")
+        return {'code': 200 ,"message":f"Succesfully deleted the item {item}"}
 
     @blp.arguments(ItemUpdateSchema)
     @blp.response(200, ItemSchema)
