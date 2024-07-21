@@ -8,7 +8,7 @@ from flask_smorest import Api, Blueprint, abort
 
 from db import stores,items
 from resources.item import find_items
-from schema import StoreSchema
+from schemas import StoreSchema
 
 
 blp = Blueprint("stores",__name__,description="Operation on stores")

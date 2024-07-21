@@ -7,8 +7,6 @@ from flask.views import MethodView
 from flask_smorest import Api, Blueprint, abort
 
 from config import DevelopmentConfig
-from db import stores,items
-from exampleDB import storesExample,itemsExample
 from resources.store import blp as StoreBlueprint
 from resources.item import blp as ItemBlueprint
 from resources.exampleStore import blp as ExampleStoreBlueprint
