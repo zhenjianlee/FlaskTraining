@@ -8,6 +8,7 @@ from flask_smorest import Api, Blueprint, abort
 
 from db import stores,items
 from resources.item import find_items
+from schema import StoreSchema
 
 
 blp = Blueprint("stores",__name__,description="Operation on stores")
@@ -29,7 +30,6 @@ class Store(MethodView):
         except KeyError:
             return abort(404,exc="Could not find id")
         
-
     def put(self,store_id):
         logging.info(f"🔵 update_store")
         request_data=request.get_json()
@@ -64,7 +64,7 @@ class Stores(MethodView):
     def get(self):
         logging.info(f"🔵 get_store")
         return {"stores":stores}
-    
+
     def post(self):
         request_data=request.get_json()
         new_store = request_data['name']

@@ -5,9 +5,9 @@ two=  uuid.uuid4().hex
 three= uuid.uuid4().hex
 
 stores = {
-    one:'Fairprice',
-    two:'Challenger',
-    three: 'Abloy',
+    one:{'name':'Fairprice', 'id':one},
+    two:{'name':'Challenger', 'id':two},
+    three: {'name':'Abloy', 'id':three},
 }
 
 items = {

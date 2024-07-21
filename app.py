@@ -8,8 +8,11 @@ from flask_smorest import Api, Blueprint, abort
 
 from config import DevelopmentConfig
 from db import stores,items
+from exampleDB import storesExample,itemsExample
 from resources.store import blp as StoreBlueprint
 from resources.item import blp as ItemBlueprint
+from resources.exampleStore import blp as ExampleStoreBlueprint
+from resources.exampleItem import blp as ExampleItemBlueprint
 
 dictConfig({
     'version': 1,
@@ -31,5 +34,7 @@ app = Flask(__name__)
 
 app.config.from_object(DevelopmentConfig)
 api=Api(app)
-api.register_blueprint(StoreBlueprint)
-api.register_blueprint(ItemBlueprint)
+# api.register_blueprint(StoreBlueprint)
+# api.register_blueprint(ItemBlueprint)
+api.register_blueprint(ExampleStoreBlueprint)
+api.register_blueprint(ExampleItemBlueprint)

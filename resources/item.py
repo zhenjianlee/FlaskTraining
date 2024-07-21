@@ -16,7 +16,7 @@ class Item(MethodView):
         if res == -1:
             return f"Could not find items with id:{item_id}",404
         return res,200
-    
+
 
 @blp.route("/items")
 class Items(MethodView):
