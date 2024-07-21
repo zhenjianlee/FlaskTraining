@@ -17,3 +17,6 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG=True
+    SQLALCHEMY_DATABASE_URI="mysql://zhenjianlee:zhenjianlee@localhost/flaskTraining"
+    SQLALCHEMY_TRACK_MODIFICATIONS=False
+    

@@ -1,93 +1,52 @@
-from logging.config import dictConfig
 import uuid
-import logging
 
-from flask import Flask,request
 from flask.views import MethodView
-from flask_smorest import Api, Blueprint, abort
+from flask_smorest import Blueprint, abort
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from db import stores,items
-from resources.item import find_items
-from schemas import StoreSchema
+from db import db
+from schemas import StoreSchema,PlainStoreSchema
+from models import StoreModel
 
 
-blp = Blueprint("stores",__name__,description="Operation on stores")
+blp = Blueprint("Stores", "stores", description="Operations on stores")
 
+stores={}
 
 @blp.route("/store/<string:store_id>")
 class Store(MethodView):
-    def get(self, store_id):
-        res = find_store(store_id)
-        if res == -1:
-            return f"Could not find store with id: {id}",404
-        return res,200
+    @blp.response(200, StoreSchema)
+    def get(cls, store_id):
+        try:
+            # You presumably would want to include the store's items here too
+            # More on that when we look at databases
+            return stores[store_id]
+        except KeyError:
+            abort(404, message="Store not found.")
 
-    def delete(self,store_id):
+    def delete(cls, store_id):
         try:
             del stores[store_id]
-            del items[store_id]
-            return "Item deleted"
+            return {"message": "Store deleted."}
         except KeyError:
-            return abort(404,exc="Could not find id")
-        
-    def put(self,store_id):
-        logging.info(f"🔵 update_store")
-        request_data=request.get_json()
-        logging.info(f"🔵 update_store, request body ={request_data}")
-        if 'name' not in request_data.keys():
-            return abort(400, "Could not find store name")
-        if 'items' not in request_data.keys():
-            return abort(400, "Could not find items")
+            abort(404, message="Store not found.")
 
-        store_data = request_data['name']
-        item_data = request_data['items']
-    
-        update_store= find_store(store_id)
-        if update_store == -1:
-            return "Could not find store id",400
 
-        update_items = find_items(store_id)
-        if update_items== -1:
-            return "Could not find  item keys",400
+@blp.route("/store")
+class StoreList(MethodView):
+    @blp.response(200, StoreSchema(many=True))
+    def get(cls):
+        return stores.values()
+
+    @blp.arguments(StoreSchema)
+    @blp.response(201, StoreSchema)
+    def post(cls, store_data):
+        store=StoreModel(**store_data)
         try:
-            stores[store_id]= store_data
-            items[store_id]= item_data
-            logging.info(f"🟢 update_store, updated items , store ={update_store} , items={update_items}")
-            return { "store": stores[store_id] , "items": items[store_id] },201
-        except:
-            logging.info(f"🔴 update_store, could not find keys")
-            return "Could not update data"
-
-
-@blp.route("/stores")
-class Stores(MethodView):
-    def get(self):
-        logging.info(f"🔵 get_store")
-        return {"stores":stores}
-
-    def post(self):
-        request_data=request.get_json()
-        new_store = request_data['name']
-        new_items = request_data['items']
-        if new_store in stores.values():
-            return abort(400,message="Duplicated store not allowed")
-        if new_items in items.values():
-            return abort(400,message="Duplicated item not allowed")
-        new_uuid = uuid.uuid4().hex
-        stores[new_uuid]=new_store
-        items[new_uuid]=new_items
-        return {
-                'id':new_uuid,
-                'created_store':new_store,
-                'created_items':new_items
-                },201
-
-
-def find_store(store_id):
-    logging.info(f"🔵 find_store id: {store_id}")
-    try:
-        return stores[store_id]
-    except KeyError:
-        logging.info(f"🔴 find_store, could not find store with id")
-        return -1
-
+            db.session.add(store)
+            db.session.commit()
+        except IntegrityError:
+            return abort(400,message="Store already exists. Cannot contain duplicate values!")
+        except SQLAlchemyError:
+            return abort(500, message="Unable to insert store data into DB")
+        return store

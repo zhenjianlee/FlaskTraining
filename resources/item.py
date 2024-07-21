@@ -1,32 +1,57 @@
 import uuid
-import logging
 
-from flask import Flask, Request
 from flask.views import MethodView
-from flask_smorest import Api, Blueprint, abort
+from flask_smorest import Blueprint, abort
+from sqlalchemy.exc import SQLAlchemyError 
 
-from db import items
+from schemas import ItemSchema, ItemUpdateSchema
+from models import ItemModel
+from db import db
 
-blp = Blueprint("items",__name__,description="Operation on items")
+blp = Blueprint("Items", "items", description="Operations on items")
+
 
 @blp.route("/item/<string:item_id>")
 class Item(MethodView):
-    def get(self,item_id):
-        res = find_items(item_id)
-        if res == -1:
-            return f"Could not find items with id:{item_id}",404
-        return res,200
+    @blp.response(200, ItemSchema)
+    def get(self, item_id):
+        item= ItemModel.query.get_or_404(item_id)
+        return item
 
+    def delete(self, item_id):
+        try:
+            ItemModel.query.filter_by(id=item_id).first().delete()
+            db.session().commit()
+        except SQLAlchemyError:
+            return abort(500, message="Could not delete item!")
 
-@blp.route("/items")
-class Items(MethodView):
+    @blp.arguments(ItemUpdateSchema)
+    @blp.response(200, ItemSchema)
+    def put(self, item_data, item_id):
+        try:
+            item =ItemModel.query.filter_by(id=item_id).first()
+            item.name = item_data['name']
+            item.price =item_data['price']
+            db.session.commit()
+        except SQLAlchemyError:
+            return abort(500,message="Could not update item!")
+
+@blp.route("/item")
+class ItemList(MethodView):
+    @blp.response(200, ItemSchema(many=True))
     def get(self):
-        return items
-    
+        try:
+            return ItemModel.query.all()
+        except SQLAlchemyError:
+            return abort(404,message="Could not retrieve Item data")
 
-def find_items(item_id):
-    try:
-        return items[item_id]
-    except KeyError:
-        logging.info(f"🔴 find_items, could not find item with id")
-        return -1
+    @blp.arguments(ItemSchema)
+    @blp.response(201, ItemSchema)
+    def post(self, item_data):
+        item = ItemModel(**item_data)
+        try:
+            db.session.add(item)
+            db.session.commit()
+        except SQLAlchemyError:
+            abort(500,message="An error occured with DB insertion")
+        return item
