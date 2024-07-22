@@ -31,13 +31,15 @@ class Item(MethodView):
     @blp.arguments(ItemUpdateSchema)
     @blp.response(200, ItemSchema)
     def put(self, item_data, item_id):
-        try:
-            item =ItemModel.query.filter_by(id=item_id).first()
+        item= ItemModel.query.get(item_id)
+        if item:
             item.name = item_data['name']
             item.price =item_data['price']
-            db.session.commit()
-        except SQLAlchemyError:
-            return abort(500,message="Could not update item!")
+        else:
+            item = ItemModel(id=item_id, **item_data)
+        db.session.add(item)
+        db.session.commit()
+        return item
 
 @blp.route("/item")
 class ItemList(MethodView):
