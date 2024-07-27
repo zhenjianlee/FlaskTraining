@@ -36,7 +36,7 @@ class UserList(MethodView):
         try:
             return UserModel.query.all()
         except SQLAlchemyError as e:
-            abort(404, message=e)
+            abort(404, message=str(e))
 
 
     @blp.arguments(PlainUserSchema)
@@ -47,7 +47,7 @@ class UserList(MethodView):
             db.session.add(user)
             db.session.commit()
         except IntegrityError as e:
-            return abort(400, message =e)
+            return abort(400, message =str(e))
         except SQLAlchemyError as e:
-            return abort(500, message=e)
+            return abort(500, message=str(e))
         return user

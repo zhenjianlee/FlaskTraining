@@ -11,6 +11,7 @@ from logging.config import dictConfig
 from resources.store import blp as StoreBlueprint
 from resources.item import blp as ItemBlueprint
 from resources.user import blp as UserBlueprint
+from resources.tag import blp as TagBlueprint
 from db import db
 
 def create_app():
@@ -40,5 +41,6 @@ def create_app():
     api.register_blueprint(StoreBlueprint)
     api.register_blueprint(ItemBlueprint)
     api.register_blueprint(UserBlueprint)
+    api.register_blueprint(TagBlueprint)
 
     return app
