@@ -4,11 +4,13 @@ import models
 
 from flask import Flask
 from flask_smorest import Api
+from flask_jwt_extended import JWTManager
 
 from config import DevelopmentConfig
 from logging.config import dictConfig
 from resources.store import blp as StoreBlueprint
 from resources.item import blp as ItemBlueprint
+from resources.user import blp as UserBlueprint
 from db import db
 
 def create_app():
@@ -33,7 +35,10 @@ def create_app():
     db.init_app(app)
     with app.app_context():
         db.create_all()
+    jwt = JWTManager(app)
     api=Api(app)
     api.register_blueprint(StoreBlueprint)
     api.register_blueprint(ItemBlueprint)
+    api.register_blueprint(UserBlueprint)
+
     return app
