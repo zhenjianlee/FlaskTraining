@@ -25,10 +25,7 @@ class Store(MethodView):
     def delete(cls, store_id):
         try:
             store = StoreModel.query.filter_by(id=store_id).first()
-            items = ItemModel.query.filter_by(store_id=store_id).all()
             logging.debug(f"Store -> delete : Found store: {store}")
-            db.session.delete(items)
-            db.session.commit()
             db.session.delete(store)
             db.session.commit()
         except SQLAlchemyError:

@@ -18,4 +18,5 @@ class ItemSchema(PlainItemSchema):
     store= fields.Nested(PlainStoreSchema,dump_only=True)
 
 class StoreSchema(PlainStoreSchema):
-    items=fields.Nested(PlainItemSchema,dump_only=True)
+    #items=fields.Nested(PlainItemSchema,dump_only=True)
+    items=fields.Nested(PlainItemSchema,many=True)
