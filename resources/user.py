@@ -4,6 +4,9 @@ import logging
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from passlib.hash import pbkdf2_sha256
+from flask_jwt_extended import create_access_token,jwt_required
+
 
 from db import db
 from schemas import PlainUserSchema
@@ -42,7 +45,7 @@ class UserList(MethodView):
     @blp.arguments(PlainUserSchema)
     @blp.response(201,PlainUserSchema)
     def post(cls,user_data):
-        user = UserModel(**user_data)
+        user = UserModel(username=user_data.get('username'),password=pbkdf2_sha256.hash(user_data.get('password')))
         try:
             db.session.add(user)
             db.session.commit()
@@ -51,3 +54,15 @@ class UserList(MethodView):
         except SQLAlchemyError as e:
             return abort(500, message=str(e))
         return user
+    
+@blp.route("/login")
+class UserLogin(MethodView):
+    @blp.arguments(PlainUserSchema)
+    def post(cls,user_data):
+        user = UserModel.query.filter_by(username=user_data.get('username')).first()
+        logging.debug(f"user : {user.id} , {user.username} , {user.password} , user_data: {user_data}")
+        if user and pbkdf2_sha256.verify(user_data.get('password'),user.password):
+            access_token = create_access_token(identity=user.id)
+            return {"access_token":access_token}
+
+        return abort(401, message="Invalid login credentials!")

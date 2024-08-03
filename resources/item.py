@@ -3,6 +3,7 @@ import uuid
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import SQLAlchemyError 
+from flask_jwt_extended import jwt_required,get_jwt
 
 from schemas import ItemSchema, ItemUpdateSchema
 from models import ItemModel
@@ -18,8 +19,13 @@ class Item(MethodView):
         item= ItemModel.query.get_or_404(item_id)
         return item
 
+    @jwt_required()
     @blp.response(200)
     def delete(self, item_id):
+        jwt=get_jwt()
+
+        if jwt.get('isAdmin') == False:
+            abort(401,message="Admin privileges required!!")
         try:
             item=ItemModel.query.filter_by(id=item_id).first()
             db.session.delete(item)
@@ -43,6 +49,7 @@ class Item(MethodView):
 
 @blp.route("/item")
 class ItemList(MethodView):
+    @jwt_required()
     @blp.response(200, ItemSchema(many=True))
     def get(self):
         try:

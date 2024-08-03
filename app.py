@@ -2,7 +2,7 @@ import uuid
 import logging
 import models
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_smorest import Api
 from flask_jwt_extended import JWTManager
 
@@ -37,6 +37,26 @@ def create_app():
     with app.app_context():
         db.create_all()
     jwt = JWTManager(app)
+
+    jwt.additional_claims_loader
+    def add_claims_to_jwt(identity):
+        if identity ==8 :
+            return {'isAdmin':True}
+        else:
+            return {'isAdmin':False}
+        
+    jwt.expired_token_loader
+    def token_expired(jwt_header,jwt_payload):
+        return (jsonify({"message":"Token has expired", "error":"token_expired"}),401)
+    
+    jwt.invalid_token_loader
+    def invalid_token(error):
+        return(jsonify({"message":"Token is invalid","error":error}),401)
+
+    jwt.unauthorized_loader
+    def unauthorized_token(error):
+        return (jsonify({"message":"Token is not authorized","error":error}))
+
     api=Api(app)
     api.register_blueprint(StoreBlueprint)
     api.register_blueprint(ItemBlueprint)
