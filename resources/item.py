@@ -14,6 +14,7 @@ blp = Blueprint("Items", "items", description="Operations on items")
 
 @blp.route("/item/<int:item_id>")
 class Item(MethodView):
+    @jwt_required() #does not require fresh token
     @blp.response(200, ItemSchema)
     def get(self, item_id):
         item= ItemModel.query.get_or_404(item_id)
@@ -23,7 +24,6 @@ class Item(MethodView):
     @blp.response(200)
     def delete(self, item_id):
         jwt=get_jwt()
-
         if jwt.get('isAdmin') == False:
             abort(401,message="Admin privileges required!!")
         try:
@@ -49,7 +49,7 @@ class Item(MethodView):
 
 @blp.route("/item")
 class ItemList(MethodView):
-    @jwt_required()
+    @jwt_required(fresh=True) #requires Fresh Token
     @blp.response(200, ItemSchema(many=True))
     def get(self):
         try:

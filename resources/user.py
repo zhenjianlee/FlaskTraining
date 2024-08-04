@@ -5,12 +5,12 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from passlib.hash import pbkdf2_sha256
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt, create_refresh_token,get_jwt_identity
 
 
 from db import db
 from schemas import PlainUserSchema
-from models import UserModel, BlockedAccessTokenModel
+from models import UserModel, BlockedTokenModel
 
 blp=Blueprint("Users","users",description="Operation on users")
 
@@ -54,7 +54,8 @@ class UserList(MethodView):
         except SQLAlchemyError as e:
             return abort(500, message=str(e))
         return user
-    
+
+
 @blp.route("/login")
 class UserLogin(MethodView):
     @blp.arguments(PlainUserSchema)
@@ -62,20 +63,37 @@ class UserLogin(MethodView):
         user = UserModel.query.filter_by(username=user_data.get('username')).first()
         logging.debug(f"user : {user.id} , {user.username} , {user.password} , user_data: {user_data}")
         if user and pbkdf2_sha256.verify(user_data.get('password'),user.password):
-            access_token = create_access_token(identity=user.id)
-            return {"access_token":access_token}
+            access_token = create_access_token(identity=user.id,fresh=True)
+            refresh_token = create_refresh_token(identity=user.id)
+            return {"access_token":access_token, "refresh_token":refresh_token}
 
         return abort(401, message="Invalid login credentials!")
-    
+
+
 @blp.route("/logout")
 class UserLogout(MethodView):
     @jwt_required()
     def post(cls):
         jti=get_jwt().get('jti')
-        blocked_token = BlockedAccessTokenModel(jti=jti,token=get_jwt())
+        blocked_token = BlockedTokenModel(jti=jti,type="access",token=get_jwt())
         try:
             db.session.add(blocked_token)
             db.session.commit()
         except SQLAlchemyError as e:
             abort(404,message=e)
         return {"message":"Successfully logged out"}
+
+
+@blp.route("/refresh")
+class RefreshToken(MethodView):
+    @jwt_required(refresh=True) #needs RefreshToken, not access token
+    def post(cls):
+        current_user = get_jwt_identity() #same as get_jwt().get("sub")
+        new_token=create_access_token(identity=current_user,fresh=False) #creates new access token that is not Fresh
+        blocked_token= BlockedTokenModel(jti=get_jwt().get('jti'),type="refresh",token=get_jwt())
+        try:
+            db.session.add(blocked_token)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            abort(400, message=e)
+        return {'access_token':new_token}
