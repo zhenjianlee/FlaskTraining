@@ -12,6 +12,7 @@ from resources.item import blp as ItemBlueprint
 from resources.user import blp as UserBlueprint
 from resources.tag import blp as TagBlueprint
 from jwt_manager import jwt
+from flask_migrate import Migrate
 
 from db import db
 
@@ -35,8 +36,9 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(DevelopmentConfig)
     db.init_app(app)
-    with app.app_context():
-        db.create_all()
+    migrate = Migrate(app,db)
+    # with app.app_context(): # Flask-Migrate now creates table, dont need SQLAlchemy
+    #     db.create_all()
         
     jwt.init_app(app)
 
